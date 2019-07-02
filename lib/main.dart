@@ -78,20 +78,36 @@ class _HomeState extends State<Home> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.only(top: 10.0),
-              itemCount: _toDoList.length,
-              itemBuilder: buildItem
-            ),
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: ListView.builder(
+                  padding: EdgeInsets.only(top: 10.0),
+                  itemCount: _toDoList.length,
+                  itemBuilder: buildItem
+                ),
+              ),
           )
         ],
       ),
     );
   }
 
+  Future<Null> _refresh()async{
+    await Future.delayed(Duration(seconds: 1));
+    setState(() {
+      _toDoList.sort((a, b){
+        if(a['concluido'] && !b['concluido']) return 1;
+        else if(!a['concluido'] && b['concluido']) return -1;
+        else return 0;
+      });
+
+      _saveData();
+    });
+  }
+
   Widget buildItem(context, index){
     return Dismissible(
-      key: Key(index.toString()),
+      key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
       background: Container(
         color: Colors.red,
         child: Align(
@@ -112,6 +128,7 @@ class _HomeState extends State<Home> {
           setState(() {
             _toDoList[index]['concluido'] = checked;
           });
+          _refresh();
         },
       ),
       onDismissed: (direction){
@@ -133,6 +150,7 @@ class _HomeState extends State<Home> {
             ),
             duration: Duration(seconds: 2),
           );
+          Scaffold.of(context).removeCurrentSnackBar();
           Scaffold.of(context).showSnackBar(snack);
         });
       },
